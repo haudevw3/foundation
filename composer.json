@@ -1,0 +1,22 @@
+{
+    "name": "php/foundation",
+    "description": "A simple PHP foundation",
+    "version": "1.0.0",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nguyen Hau",
+            "email": "hau.nguyen.devw3@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Foundation\\Support\\": "src/Foundation/Macroable/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^7.3|^8.0"
+    }
+}
