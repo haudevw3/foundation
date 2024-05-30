@@ -12,6 +12,8 @@
     ],
     "autoload": {
         "psr-4": {
+            "Contracts\\": "src/Contracts/",
+            "Foundation\\Container\\": "src/Foundation/Container/",
             "Foundation\\Support\\": "src/Foundation/Macroable/"
         }
     },
