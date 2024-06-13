@@ -1,7 +1,7 @@
 {
     "name": "haudevw3/foundation",
     "description": "A simple PHP foundation",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -12,10 +12,28 @@
     ],
     "autoload": {
         "psr-4": {
-            "Contracts\\": "src/Contracts/",
+            "Foundation\\Application\\": "src/Foundation/Application/",
+            "Foundation\\Auth\\": "src/Foundation/Auth/",
+            "Foundation\\Config\\": "src/Foundation/Config/",
+            "Foundation\\Console\\": "src/Foundation/Console/",
             "Foundation\\Container\\": "src/Foundation/Container/",
-            "Foundation\\Support\\": "src/Foundation/Macroable/"
-        }
+            "Foundation\\Contracts\\": "src/Foundation/Contracts/",
+            "Foundation\\Cookie\\": "src/Foundation/Cookie/",
+            "Foundation\\Database\\": "src/Foundation/Database/",
+            "Foundation\\Log\\": "src/Foundation/Log/",
+            "Foundation\\Http\\": "src/Foundation/Http/",
+            "Foundation\\Macroable\\": "src/Foundation/Macroable/",
+            "Foundation\\Pagination\\": "src/Foundation/Pagination/",
+            "Foundation\\Routing\\": "src/Foundation/Routing/",
+            "Foundation\\Session\\": "src/Foundation/Session/",
+            "Foundation\\Support\\": "src/Foundation/Support/",
+            "Foundation\\Validation\\": "src/Foundation/Validation/",
+            "Foundation\\View\\": "src/Foundation/View/"
+        },
+        "files": [
+            "src/Foundation/Application/helpers.php",
+            "src/Foundation/Support/helpers.php"
+        ]
     },
     "minimum-stability": "stable",
     "require": {
