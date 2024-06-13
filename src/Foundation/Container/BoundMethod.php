@@ -2,7 +2,7 @@
 
 namespace Foundation\Container;
 
-use Contracts\Container\EntryNotFoundException;
+use Foundation\Contracts\Container\EntryNotFoundException;
 use ReflectionObject;
 
 class BoundMethod
@@ -41,7 +41,7 @@ class BoundMethod
      * @param string $method
      * @return array|null
      * 
-     * @throws \EntryNotFoundException
+     * @throws \Foundation\Contracts\Container\EntryNotFoundException
      */
     protected static function getMethodDependencies($instance, $method)
     {
@@ -61,6 +61,6 @@ class BoundMethod
             $dependencies[] = Util::getParameterClassName($parameter);
         }
 
-        return ! empty($dependencies) ? $dependencies : null;
+        return $dependencies ?: null;
     }
 }

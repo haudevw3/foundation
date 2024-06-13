@@ -2,7 +2,7 @@
 
 namespace Foundation\Container;
 
-use Contracts\Container\EntryNotFoundException;
+use Foundation\Contracts\Container\EntryNotFoundException;
 use ReflectionNamedType;
 
 class Util
@@ -13,7 +13,7 @@ class Util
      * @param \ReflectionParameter $parameter
      * @return string
      * 
-     * @throws \EntryNotFoundException
+     * @throws \Foundation\Contracts\Container\EntryNotFoundException
      */
     public static function getParameterClassName($parameter)
     {

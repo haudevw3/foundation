@@ -2,13 +2,15 @@
 
 namespace Foundation\Container;
 
+use ArrayAccess;
 use Closure;
-use Contracts\Container\BindingResolutionException;
-use Contracts\Container\ContainerContract;
+use Foundation\Contracts\Container\BindingResolutionException;
+use Foundation\Contracts\Container\ContainerContract;
+use LogicException;
 use ReflectionClass;
 use TypeError;
 
-class Container implements ContainerContract
+class Container implements ArrayAccess, ContainerContract
 {
     /**
      * The current globally accessible instance of the container (if available).
@@ -22,28 +24,42 @@ class Container implements ContainerContract
      *
      * @var array
      */
-    public $bindings = [];
+    protected $bindings = [];
 
     /**
-     * The registered aliases keyed by the abstract name.
+     * The container's method bindings.
+     *
+     * @var \Closure[]
+     */
+    protected $methodBindings = [];
+
+    /**
+     * The registered type aliases.
      *
      * @var array
      */
     protected $aliases = [];
 
     /**
+     * The registered aliases keyed by the abstract name.
+     *
+     * @var array
+     */
+    protected $abstractAliases = [];
+
+    /**
      * The container's shared instances
      *
      * @var array
      */
-    public $instances = [];
+    protected $instances = [];
 
     /**
      * The container's scoped instances.
      *
      * @var array
      */
-    public $scopedInstances = [];
+    protected $scopedInstances = [];
 
     /**
      * Contains temporary dependencies of the graph.
@@ -53,6 +69,17 @@ class Container implements ContainerContract
     protected $maps = [];
 
     /**
+     * Check if the given abstract exists.
+     *
+     * @param string $abstract
+     * @return bool
+     */
+    protected function has($abstract)
+    {
+        return isset($this->instances[$abstract]);
+    }
+
+    /**
      * Check if the given abstract type has been bound.
      *
      * @param string $abstract
@@ -60,18 +87,8 @@ class Container implements ContainerContract
      */
     public function bound($abstract)
     {
-        return isset($this->bindings[$abstract]);
-    }
-
-    /**
-     * Check if the given concrete exists.
-     *
-     * @param string $concrete
-     * @return bool
-     */
-    protected function has($concrete)
-    {
-        return isset($this->instances[$concrete]);
+        return isset($this->bindings[$abstract]) ||
+               $this->isAlias($abstract);
     }
 
     /**
@@ -83,148 +100,52 @@ class Container implements ContainerContract
     protected function isShared($abstract)
     {
         return (isset($this->bindings[$abstract]['shared']) &&
-                $this->bindings[$abstract]['shared'] === true);
+               $this->bindings[$abstract]['shared'] === true);
     }
 
     /**
-     * Check if the given abstract exists.
+     * Establish alias and place them into the respective array.
      *
      * @param string $abstract
+     * @param string $alias
+     * @return void
+     * 
+     * @throws \LogicException
+     */
+    public function alias($abstract, $alias)
+    {
+        if ($abstract === $alias) {
+            throw new LogicException("Cannot alias [{$abstract}] to itself.");
+        }
+
+        $this->aliases[$alias] = $abstract;
+
+        $this->abstractAliases[$abstract][] = $alias;
+    }
+
+    /**
+     * Determine if a given string is an alias.
+     *
+     * @param string $name
      * @return bool
      */
-    protected function hasAlias($abstract)
+    protected function isAlias($name)
     {
-        return isset($this->aliases[$abstract]);
+        return isset($this->aliases[$name]) ||
+               in_array($name, $this->aliases);
     }
 
     /**
-     * Check if the given abstract is alias.
+     * Get the alias for an abstract if available.
      *
-     * @param string $abstract
-     * @return bool
-     */
-    protected function isAlias($abstract)
-    {
-        return (count(explode('\\', $abstract)) > 1) ? false : true;
-    }
-
-    /**
-     * Get the alias with the given abstract.
-     *
-     * @param string $abstract
+     * @param string $name
      * @return string
      */
-    protected function getAlias($abstract)
+    protected function getAlias($name)
     {
-        return $this->aliases[$abstract];
-    }
-
-    /**
-     * Set an alias with the given abstract.
-     *
-     * @param string $abstract
-     * @param string $concrete
-     * @return void
-     */
-    protected function setAlias($abstract, $concrete)
-    {
-        $this->aliases[$abstract] = $concrete;
-    }
-
-    /**
-     * Get the container's bindings.
-     *
-     * @return array
-     */
-    protected function getBindings()
-    {
-        return $this->bindings;
-    }
-
-    /**
-     * Set a binding with the given abstract, concrete, shared flag.
-     *
-     * @param string $abstract
-     * @param string $concrete
-     * @param bool $shared
-     * @return void
-     */
-    protected function binding($abstract, $concrete, $shared)
-    {
-        $this->bindings[$abstract] = compact('concrete', 'shared');
-    }
-
-    /**
-     * Set a binding with the given abstract, concrete, shared flag.
-     * If the abstract is an alias.
-     *
-     * @param string $abstract
-     * @param string $concrete
-     * @param bool $shared
-     * @return void
-     */
-    protected function bindingIf($abstract, $concrete, $shared)
-    {
-        if ($this->isAlias($abstract)) {
-            $this->setAlias($abstract, $concrete);
-
-            $abstract = $concrete;
-        }
-
-        $this->binding($abstract, $concrete, $shared);
-    }
-
-    /**
-     * Set an instance with the given abstract, concrete, shared flag.
-     * If shared is true, it is a singleton instance.
-     * If shared is false, it is a scoped instance.
-     *
-     * @param string $abstract
-     * @param \Closure $concrete
-     * @param bool $shared
-     * @return void
-     */
-    protected function instanceIf($abstract, $concrete, $shared)
-    {
-        $object = $concrete();
-
-        if (! is_object($object)) {
-            throw new TypeError(self::class.'::bind(): Argument #2 ($concrete) must be of type Object.');
-        }
-
-        if ($shared) {
-            $concrete = get_class($object);
-
-            $this->bindingIf($abstract, $concrete, $shared);
-
-            $this->setInstance($concrete, $object);
-        } else {
-            $this->setScopedInstance($abstract, $concrete);
-        }
-    }
-
-    /**
-     * Set an object with the given concrete.
-     *
-     * @param string $concrete
-     * @param object $object
-     * @return void
-     */
-    protected function setInstance($concrete, $object)
-    {
-        $this->instances[$concrete] = $object;
-    }
-
-    /**
-     * Set a closure with the given abstract.
-     *
-     * @param string $abstract
-     * @param \Closure $closure
-     * @return void
-     */
-    protected function setScopedInstance($abstract, $closure)
-    {
-        $this->scopedInstances[$abstract] = $closure;
+        return isset($this->abstractAliases[$name])
+                ? end($this->abstractAliases[$name])
+                : $name;
     }
 
     /**
@@ -239,17 +160,90 @@ class Container implements ContainerContract
      */
     public function bind($abstract, $concrete = null, $shared = false)
     {
+        // If the concrete is null, 
+        // then the abstract must be the name of a class.
         if (is_null($concrete)) {
             $concrete = $abstract;
         }
 
+        // If concrete is a string, it must be the name of a class.
+        // and abstract must be the name of an alias. For example: 'name', interface.
         if (is_string($concrete)) {
             $this->bindingIf($abstract, $concrete, $shared);
         }
 
+        // If concrete is a closure, it must return an object.
         if ($concrete instanceof Closure) {
             $this->instanceIf($abstract, $concrete, $shared);
         }
+    }
+
+    /**
+     * Set a binding with the container.
+     *
+     * @param string $abstract
+     * @param string $concrete
+     * @param bool $shared
+     * @return void
+     */
+    protected function bindingIf($abstract, $concrete, $shared)
+    {
+        if (! $this->isAlias($abstract)) {
+            $this->bindings[$abstract] = compact('concrete', 'shared');
+        }
+    }
+
+    /**
+     * Set an instance with the container.
+     * If $shared is true, it is registered as a singleton instance.
+     * If $shared is false, it is registered as a scoped instance.
+     *
+     * @param string $abstract
+     * @param \Closure $concrete
+     * @param bool $shared
+     * @return void
+     */
+    protected function instanceIf($abstract, $concrete, $shared)
+    {
+        $object = $concrete($this);
+
+        if (! is_object($object)) {
+            throw new TypeError(self::class.'::bind(): Argument #2 ($concrete) the returned Closure must be an Object.');
+        }
+
+        if ($shared) {
+            if ($this->isAlias($abstract)) {
+                $abstract = $this->getAlias($abstract);
+            }
+
+            $this->setInstance($abstract, $object);
+        } else {
+            $this->setScopedInstance($abstract, $concrete);
+        }
+    }
+
+    /**
+     * Set an object instance in the container for the given concrete type.
+     *
+     * @param string $concrete
+     * @param object $object
+     * @return void
+     */
+    protected function setInstance($concrete, $object)
+    {
+        $this->instances[$concrete] = $object;
+    }
+
+    /**
+     * Set a closure as a scoped instance in the container for the given abstract type.
+     *
+     * @param string $abstract
+     * @param \Closure $closure
+     * @return void
+     */
+    protected function setScopedInstance($abstract, $closure)
+    {
+        $this->scopedInstances[$abstract] = $closure;
     }
 
     /**
@@ -294,46 +288,90 @@ class Container implements ContainerContract
     }
 
     /**
-     * Get the instance with the given abstract.
+     * The factory produces objects based on the given bindings.
      *
-     * @param string $abstract
-     * @return object
+     * @return void
      */
-    public function get($abstract)
+    public function factory()
     {
-        if ($this->isAlias($abstract)) {
-            $abstract = $this->getAlias($abstract);
+        $maps = [];
+
+        foreach ($this->getBindings() as $abstract => $value) {
+            $maps[$abstract] = $value['concrete'];
         }
 
-        if ($this->bound($abstract)) {
-            $abstract = $this->getConcrete($abstract);
-        }
+        $dependencies = $this->buildDependencyGraphs($maps);
 
-        return $this->instances[$abstract];
+        $this->resolveDependencies($dependencies);
     }
 
     /**
-     * Get the abstract with the given concrete.
+     * Build dependency graphs using the provided maps.
      *
-     * @param string $concrete
-     * @return string|null
+     * @param array $maps
+     * @return array
      */
-    protected function getAbstract($concrete)
+    protected function buildDependencyGraphs($maps)
     {
-        $abstract = array_keys($this->getBindings(), $concrete);
+        $dependencyGraphs = [];
 
-        return ! empty($abstract) ? reset($abstract) : null;
+        $dependencyGroups = [];
+
+        $independencyGroups = [];
+
+        // Here we are divided into two groups.
+        // Groups without dependencies and groups with dependencies.
+        // Groups with no dependencies will be resolved first.
+        // The group has dependencies that will be resolved later.
+        foreach ($maps as $abstract => $concrete) {
+            $dependencies = $this->getConstructorDependencies($concrete);
+
+            if (is_null($dependencies)) {
+                $independencyGroups[] = $abstract;
+            } else {
+                $dependencyGroups[$abstract] = $dependencies;
+            }
+        }
+
+        // Sort dependency groups with algorithm.
+        $topologicalSort = new TopologicalSort($dependencyGroups);
+
+        $dependencyGroups = $topologicalSort->sort();
+
+        $dependencyGraphs = array_merge($independencyGroups, $dependencyGroups);
+
+        $dependencyGraphs = array_unique($dependencyGraphs);
+
+        return $dependencyGraphs;
     }
 
     /**
-     * Get the concrete with the given abstract.
+     * Resolve dependencies with the given dependency graphs.
      *
-     * @param string $abstract
-     * @return string
+     * @param array $dependencies
+     * @return void
      */
-    protected function getConcrete($abstract)
+    protected function resolveDependencies($dependencies)
     {
-        return $this->bindings[$abstract]['concrete'];
+        foreach ($dependencies as $dependency) {
+            $concrete = $this->getConcrete($dependency);
+            
+            if ($this->has($dependency)) {
+                continue;
+            }
+
+            if (is_null($this->getConstructorDependencies($concrete))) {
+                $this->setInstance($dependency, new $concrete);
+            } else {
+                $arguments = [];
+
+                $this->getConstructorDependencies($concrete, function ($object) use (&$arguments) {
+                    $arguments[] = $object;
+                });
+
+                $this->setInstance($dependency, new $concrete(...$arguments));
+            }
+        }
     }
 
     /**
@@ -369,103 +407,11 @@ class Container implements ContainerContract
             // If the callback is a closure, this method retrieves
             // the dependencies associated with the given concrete.
             if ($callback instanceof Closure) {
-                $callback($this->get($this->getConcrete($name)));
+                $callback($this->get($name));
             }
         }
 
         return $dependencies;
-    }
-
-    /**
-     * The factory produces objects based on the given bindings.
-     *
-     * @return void
-     */
-    public function factory()
-    {
-        $maps = [];
-
-        foreach ($this->getBindings() as $key => $value) {
-            $maps[$key] = $value['concrete'];
-        }
-
-        $dependencies = $this->buildDependencyGraphs($maps);
-
-        $this->resolveDependencies($dependencies);
-    }
-
-    /**
-     * Build dependency graphs using the provided maps.
-     *
-     * @param array $maps
-     * @return array
-     */
-    protected function buildDependencyGraphs($maps)
-    {
-        $dependencyGraphs = [];
-
-        $dependencyGroups = [];
-
-        $independencyGroups = [];
-
-        // Here we are divided into two groups.
-        // Groups without dependencies and groups with dependencies.
-        // Groups with no dependencies will be resolved first.
-        // The group has dependencies that will be resolved later.
-
-        foreach ($maps as $abstract => $concrete) {
-
-            if ($this->has($concrete)) {
-                continue;
-            }
-
-            $dependencies = $this->getConstructorDependencies($concrete);
-
-            if (is_null($dependencies)) {
-                $independencyGroups[] = $abstract;
-            } else {
-                $dependencyGroups[$abstract] = $dependencies;
-            }
-        }
-
-        $topologicalSort = new TopologicalSort($dependencyGroups);
-
-        $dependencyGroups = $topologicalSort->sort();
-
-        $dependencyGraphs = array_merge($independencyGroups, $dependencyGroups);
-
-        $dependencyGraphs = array_unique($dependencyGraphs);
-
-        return $dependencyGraphs;
-    }
-
-    /**
-     * Resolve dependencies with the given dependency graphs.
-     *
-     * @param array $dependencies
-     * @return void
-     */
-    protected function resolveDependencies($dependencies)
-    {
-        foreach ($dependencies as $dependency) {
-            $dependency = $this->getConcrete($dependency);
-            
-            if ($this->has($dependency)) {
-                continue;
-            }
-
-            if (is_null($this->getConstructorDependencies($dependency))) {
-                $this->setInstance($dependency, new $dependency);
-            } else {
-                $arguments = [];
-
-                $this->getConstructorDependencies($dependency, function ($object) use (&$arguments) {
-                    $arguments[] = $object;
-                });
-
-                $this->setInstance($dependency, new $dependency(...$arguments));
-            }
-        }
     }
 
     /**
@@ -476,11 +422,17 @@ class Container implements ContainerContract
      */
     public function build($concrete)
     {
+        // Dependencies related to the concrete must be bound beforehand.
+        // Draw a map with dependencies.
+        // Build the dependency map.
+        // Return the object to be built.
+        $this->bindIf($concrete);
+
         $this->drawMap($concrete);
 
-        $maps = array_unique($this->getMaps());
+        $maps = array_unique($this->maps);
 
-        $this->resetMaps();
+        $this->maps = [];
 
         $dependencies = $this->buildDependencyGraphs($maps);
 
@@ -490,46 +442,19 @@ class Container implements ContainerContract
     }
 
     /**
-     * Get all the maps.
-     *
-     * @return array
-     */
-    protected function getMaps()
-    {
-        return $this->maps;
-    }
-
-    /**
-     * Set a map with the given abstract, concrete.
+     * Get all dependencies from parent to children.
      *
      * @param string $abstract
-     * @param string|null $concrete
+     * @param string $concrete
      * @return void
      */
-    protected function setMap($abstract, $concrete = null)
+    protected function drawMap($abstract, $concrete = null)
     {
         if (is_null($concrete)) {
             $concrete = $abstract;
         }
 
         $this->maps[$abstract] = $concrete;
-    }
-
-    /**
-     * Get all dependencies from parent to children.
-     *
-     * @param string $concrete
-     * @return void
-     */
-    protected function drawMap($concrete)
-    {
-        if ($this->bound($concrete)) {
-            $this->setMap($concrete, $this->getConcrete($concrete));
-        } else {
-            $this->setMap($concrete);
-
-            $this->singletonIf($concrete);
-        }
 
         $dependencies = $this->getConstructorDependencies($concrete);
 
@@ -538,29 +463,31 @@ class Container implements ContainerContract
         }
 
         foreach ($dependencies as $dependency) {
-            $this->drawMap($dependency);
+            $abstract = $dependency;
+
+            if ($this->bound($dependency)) {
+                $dependency = $this->getConcrete($dependency);
+            }
+
+            $this->drawMap($abstract, $dependency);
         }
     }
 
     /**
-     * Clear all dependencies currently stored in the maps.
-     *
-     * @return void
-     */
-    protected function resetMaps()
-    {
-        $this->maps = [];
-    }
-
-    /**
-     * Get the scoped instance with the given abstract.
+     * Instantiate a abstract scoped instance of the given type.
      *
      * @param string $abstract
-     * @return \Closure
+     * @return void
+     * 
+     * @throws \Foundation\Contracts\Container\BindingResolutionException
      */
-    protected function getScoped($abstract)
+    public function make($abstract)
     {
-        return $this->scopedInstances[$abstract];
+        if ($this->hasScoped($abstract)) {
+            return $this->getScoped($abstract)();
+        }
+
+        throw new BindingResolutionException(self::class."::bind(): Not found for [$abstract].");
     }
 
     /**
@@ -575,32 +502,14 @@ class Container implements ContainerContract
     }
 
     /**
-     * Register a scoped binding in the container.
+     * Get the scoped instance with the given abstract.
      *
      * @param string $abstract
-     * @param string|null|\Closure $concrete
-     * @return void
+     * @return \Closure
      */
-    protected function scoped($abstract, $concrete = null)
+    protected function getScoped($abstract)
     {
-        $this->bind($abstract, $concrete, false);
-    }
-
-    /**
-     * Instantiate a abstract scoped instance of the given type.
-     *
-     * @param string $abstract
-     * @return void
-     * 
-     * @throws \BindingResolutionException
-     */
-    public function make($abstract)
-    {
-        if ($this->hasScoped($abstract)) {
-            return $this->getScoped($abstract)();
-        }
-
-        throw new BindingResolutionException(self::class."::bind(): Not found for [$abstract].");
+        return $this->scopedInstances[$abstract];
     }
 
     /**
@@ -610,7 +519,7 @@ class Container implements ContainerContract
      * @param string $method
      * @return mixed
      */
-    public function callMethod($concrete, $method)
+    public function call($concrete, $method)
     {
         return BoundMethod::call($this, $concrete, $method);
     }
@@ -628,4 +537,114 @@ class Container implements ContainerContract
 
         return static::$instance;
     }
+
+    /**
+     * Get the instance with the given name.
+     *
+     * @param string $name
+     * @return object
+     */
+    public function get($name)
+    {
+        if ($this->isAlias($name)) {
+            $name = $this->getAlias($name);
+        }
+        
+        return $this->instances[$name];
+    }
+
+    /**
+     * Get the container's bindings.
+     *
+     * @return array
+     */
+    protected function getBindings()
+    {
+        return $this->bindings;
+    }
+
+    /**
+     * Get the concrete with the given abstract.
+     *
+     * @param string $abstract
+     * @return string
+     */
+    protected function getConcrete($abstract)
+    {
+        return $this->bindings[$abstract]['concrete'];
+    }
+
+    /**
+     * Determine if a given offset exists.
+     *
+     * @param string $key
+     * @return bool
+     */
+    #[\ReturnTypeWillChange]
+    public function offsetExists($key)
+    {
+        return $this->bound($key);
+    }
+
+    /**
+     * Get the value at a given offset.
+     *
+     * @param string $key
+     * @return mixed
+     */
+    #[\ReturnTypeWillChange]
+    public function offsetGet($key)
+    {
+        return $this->get($key);
+    }
+
+    /**
+     * Set the value at a given offset.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     */
+    #[\ReturnTypeWillChange]
+    public function offsetSet($key, $value)
+    {
+        $this->bind($key, $value instanceof Closure ? $value : function () use ($value) {
+            return $value;
+        });
+    }
+
+    /**
+     * Unset the value at a given offset.
+     *
+     * @param string $key
+     * @return void
+     */
+    #[\ReturnTypeWillChange]
+    public function offsetUnset($key)
+    {
+        unset($this->bindings[$key], $this->instances[$key]);
+    }
+
+    // /**
+    //  * Dynamically access container services.
+    //  *
+    //  * @param string $key
+    //  * @return mixed
+    //  */
+    // public function __get($key)
+    // {
+    //     return $this[$key];
+    // }
+
+    // /**
+    //  * Dynamically set container services.
+    //  *
+    //  * @param string $key
+    //  * @param mixed $value
+    //  * @return void
+    //  */
+    // public function __set($key, $value)
+    // {
+    //     $this[$key] = $value;
+    // }
 }

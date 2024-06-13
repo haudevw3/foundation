@@ -1,6 +1,6 @@
 <?php
 
-namespace Foundation\Support\Traits;
+namespace Foundation\Macroable\Traits;
 
 use BadMethodCallException;
 use Closure;

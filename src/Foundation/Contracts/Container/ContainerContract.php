@@ -1,6 +1,6 @@
 <?php
 
-namespace Contracts\Container;
+namespace Foundation\Contracts\Container;
 
 interface ContainerContract
 {
@@ -11,6 +11,17 @@ interface ContainerContract
      * @return bool
      */
     public function bound($abstract);
+
+    /**
+     * Establish alias and place them into the respective array.
+     *
+     * @param string $abstract
+     * @param string $alias
+     * @return void
+     * 
+     * @throws \LogicException
+     */
+    public function alias($abstract, $alias);
 
     /**
      * Register a binding with the container.
@@ -60,12 +71,12 @@ interface ContainerContract
     public function factory();
 
     /**
-     * Get the instance with the given abstract.
+     * Get the instance with the given name.
      *
-     * @param string $abstract
+     * @param string $name
      * @return object
      */
-    public function get($abstract);
+    public function get($name);
 
     /**
      * Instantiate a concrete instance of the given type.
@@ -92,5 +103,5 @@ interface ContainerContract
      * @param string $method
      * @return mixed
      */
-    public function callMethod($concrete, $method);
+    public function call($concrete, $method);
 }
