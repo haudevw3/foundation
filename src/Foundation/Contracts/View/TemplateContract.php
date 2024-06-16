@@ -7,10 +7,10 @@ interface TemplateContract
     /**
      * Set the name of the view and starts output buffering.
      *
-     * @param string $path
+     * @param string $name
      * @return void
      */
-    public function push($path);
+    public function push($name);
 
     /**
      * End output buffering and retrieves the buffered output.
@@ -22,18 +22,18 @@ interface TemplateContract
     /**
      * Render JavaScript content associated with the specified name of the view.
      *
-     * @param string $path
+     * @param string $name
      * @return void
      */
-    public function renderJs($path);
+    public function renderJs($name);
 
     /**
      * Render CSS content associated with the specified name of the view.
      *
-     * @param string $path
+     * @param string $name
      * @return void
      */
-    public function renderCss($path);
+    public function renderCss($name);
 
     /**
      * Render Component content associated with the specified name of the view.
