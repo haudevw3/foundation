@@ -6,6 +6,8 @@ use Foundation\Contracts\View\TemplateContract;
 
 class Template implements TemplateContract
 {
+    use ViewHelpers;
+
     /**
      * Contains the paths to the css and js files.
      *
@@ -14,41 +16,36 @@ class Template implements TemplateContract
     protected $stack = [];
 
     /**
-     * The name of the view.
+     * The namespace of the view.
      *
      * @var string
      */
-    protected $name;
+    protected $namespace;
 
     /**
-     * The view instance.
+     * Set the namespace of the view and starts output buffering.
      *
-     * @var \Foundation\View\View
-     */
-    protected $view;
-
-    /**
-     * Create a new Template instance.
-     *
-     * @param \Foundation\View\View $view
+     * @param string $namespace
      * @return void
      */
-    public function __construct(View $view)
+    public function push($namespace)
     {
-        $this->view = $view;
+        $this->namespace = $this->convertNamespace($namespace);
+        
+        ob_start();
     }
 
     /**
-     * Set the name of the view and starts output buffering.
+     * Convert the namespace of the view.
      *
-     * @param string $name
-     * @return void
+     * @param string $namespace
+     * @return string
      */
-    public function push($name)
+    protected function convertNamespace($namespace)
     {
-        $this->name = $this->parseName($name);
-        
-        ob_start();
+        $namespace = explode('.', trim($namespace));
+
+        return implode('/', $namespace);
     }
 
     /**
@@ -66,19 +63,6 @@ class Template implements TemplateContract
     }
 
     /**
-     * Parse the name of the view.
-     *
-     * @param string $name
-     * @return string
-     */
-    protected function parseName($name)
-    {
-        $name = explode('.', trim($name));
-
-        return implode('/', $name);
-    }
-
-    /**
      * Add the provided matches to the stack.
      *
      * @param array $matches
@@ -89,11 +73,11 @@ class Template implements TemplateContract
         foreach ($matches as $value) {
             if (preg_match('~css~', $value)) {
                 $this->pushStack(
-                    $this->name, 'css', $value
+                    $this->namespace(), 'css', $value
                 );
             } else {
                 $this->pushStack(
-                    $this->name, 'js', $value
+                    $this->namespace(), 'js', $value
                 );
             }
         }
@@ -102,71 +86,73 @@ class Template implements TemplateContract
     /**
      * Push a new entry onto the stack.
      *
-     * @param string $name
+     * @param string $namespace
      * @param string $tag
-     * @param mixed $value
+     * @param string $value
      * @return void
      */
-    protected function pushStack($name, $tag, $value)
+    protected function pushStack($namespace, $tag, $value)
     {
-        $this->stack[$name][$tag][] = $value;
+        $this->stack[$namespace][$tag][] = $value;
     }
 
     /**
-     * Render JavaScript content associated with the specified name of the view.
+     * Get the namespace.
      *
-     * @param string $name
-     * @return void
+     * @return string
      */
-    public function renderJs($name)
+    protected function namespace()
     {
-        $name = $this->parseName($name);
-
-        foreach ($this->getStack($name)['js'] as $link) {
-            echo '<script src="'.$link.'"></script>';
-        }
+        return $this->namespace;
     }
 
     /**
-     * Render CSS content associated with the specified name of the view.
+     * Render JavaScript content associated with name of the view.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    public function renderCss($name)
+    public function renderJs($namespace)
     {
-        $name = $this->parseName($name);
+        $namespace = $this->convertNamespace($namespace);
 
-        foreach ($this->getStack($name)['css'] as $link) {
-            echo '<link rel="stylesheet" href="'.$link.'">';
+        foreach ($this->getStack($namespace)['js'] as $value) {
+            echo '<script src="'.$value.'"></script>';
         }
     }
 
     /**
-     * Render Component content associated with the specified name of the view.
+     * Render CSS content associated with name of the view.
      *
-     * @param array|string $components
+     * @param string $namespace
      * @return void
      */
-    public function renderComponent($components)
+    public function renderCss($namespace)
     {
-        $components = is_array($components) ? $components : [$components];
-        
-        $paths = [];
+        $namespace = $this->convertNamespace($namespace);
 
-        $this->view->parseView($components[0]);
-
-        foreach ($components as $component) {
-            $paths[] = $this->view->parseView($component)['path'];
-        }
-
-        foreach ($paths as $path) {
-            require $path;
+        foreach ($this->getStack($namespace)['css'] as $value) {
+            echo '<link rel="stylesheet" href="'.$value.'">';
         }
     }
 
     /**
-     * Get the stack associated with the specified key.
+     * Render Component content associated with name of the view.
+     *
+     * @param array|string $namespaces
+     * @return void
+     */
+    public function renderComponent($namespaces)
+    {
+        $namespaces = is_array($namespaces) ? $namespaces : [$namespaces];
+
+        foreach ($namespaces as $namespace) {
+            $this->_require($namespace);
+        }
+    }
+
+    /**
+     * Get the stack with key the given.
      *
      * @param string $key
      * @return array
@@ -174,5 +160,57 @@ class Template implements TemplateContract
     protected function getStack($key)
     {
         return $this->stack[$key];
+    }
+
+    /**
+     * Include a file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    public function _include($namespace)
+    {
+        $path = $this->parseNamespace($namespace)['path'];
+
+        include $path;
+    }
+
+    /**
+     * Include a single file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    public function include_one($namespace)
+    {
+        $path = $this->parseNamespace($namespace)['path'];
+
+        include_once $path;
+    }
+
+    /**
+     * Require a file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    public function _require($namespace)
+    {
+        $path = $this->parseNamespace($namespace)['path'];
+
+        require $path;
+    }
+
+    /**
+     * Require a single file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    public function require_one($namespace)
+    {
+        $path = $this->parseNamespace($namespace)['path'];
+
+        require_once $path;
     }
 }

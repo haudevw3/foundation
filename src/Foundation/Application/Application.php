@@ -16,7 +16,7 @@ class Application extends Container implements ApplicationContract, KernelContra
      *
      * @var string
      */
-    const VERSION = '1.0.3';
+    const VERSION = '1.0.4';
 
     /**
      * Application root directory path.

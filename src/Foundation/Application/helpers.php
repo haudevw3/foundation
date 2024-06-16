@@ -371,29 +371,68 @@ if (! function_exists('view')) {
     }
 }
 
-if (! function_exists('include_one')) {
+if (! function_exists('_include')) {
     /**
-     * Get contents for the given view.
+     * Include a file based on the provided namespace.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    function include_one($name)
+    function _include($namespace)
     {
-        return view($name);
+        return app('template')->_include($namespace);
+    }
+}
+
+if (! function_exists('include_one')) {
+    /**
+     * Include a single file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    function include_one($namespace)
+    {
+        return app('template')->include_one($namespace);
+    }
+}
+
+if (! function_exists('_require')) {
+    /**
+     * Require a file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    function _require($namespace)
+    {
+        return app('template')->_require($namespace);
+    }
+}
+
+if (! function_exists('require_one')) {
+    /**
+     * Require a single file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    function require_one($namespace)
+    {
+        return app('template')->require_one($namespace);
     }
 }
 
 if (! function_exists('push')) {
     /**
-     * Set the name of the view and starts output buffering.
+     * Set the namespace of the view and starts output buffering.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    function push($name)
+    function push($namespace)
     {
-        return app('template')->push($name);
+        return app('template')->push($namespace);
     }
 }
 
@@ -411,39 +450,39 @@ if (! function_exists('endpush')) {
 
 if(! function_exists('render_js')) {
     /**
-     * Render JavaScript content associated with the specified name of the view.
+     * Render JavaScript content associated with name of the view.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    function render_js($name)
+    function render_js($namespace)
     {
-        return app('template')->renderJs($name);
+        return app('template')->renderJs($namespace);
     }
 }
 
 if(! function_exists('render_css')) {
     /**
-     * Render CSS content associated with the specified name of the view.
+     * Render CSS content associated with name of the view.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    function render_css($name)
+    function render_css($namespace)
     {
-        return app('template')->renderCss($name);
+        return app('template')->renderCss($namespace);
     }
 }
 
 if(! function_exists('render_component')) {
     /**
-     * Render Component content associated with the specified name of the view.
+     * Render Component content associated with name of the view.
      *
-     * @param array|string $components
+     * @param array|string $namespaces
      * @return void
      */
-    function render_component($components)
+    function render_component($namespaces)
     {
-        return app('template')->renderComponent($components);
+        return app('template')->renderComponent($namespaces);
     }
 }

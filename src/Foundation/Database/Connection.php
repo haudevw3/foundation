@@ -32,9 +32,9 @@ class Connection implements ConnectionContract
      */
     protected function getDefaultConnection()
     {
-        $default = config('connection.default');
+        $default = config('database.default');
 
-        return config("connection.$default");
+        return config("database.$default");
     }
 
     /**

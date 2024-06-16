@@ -54,7 +54,7 @@ abstract class ServiceProvider
      */
     protected function loadRoutesFrom($path)
     {
-        require $path;
+        require base_path($path);
     }
 
     /**
@@ -67,8 +67,23 @@ abstract class ServiceProvider
     protected function loadViewsFrom($path, $namespace)
     {
         $config = $this->app->get('config');
+        
         if ($config->has('view')) {
             $config->push('view.paths', [$namespace => $path]);
         }
+    }
+
+    /**
+     * Merge the given configuration with the existing configuration.
+     *
+     * @param string $path
+     * @param string $key
+     * @return void
+     */
+    protected function mergeConfigFrom($path, $key)
+    {
+        $config = $this->app->get('config');
+
+        $config->set($key, require base_path($path));
     }
 }

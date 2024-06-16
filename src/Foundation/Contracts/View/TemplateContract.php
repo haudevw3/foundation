@@ -5,12 +5,12 @@ namespace Foundation\Contracts\View;
 interface TemplateContract
 {
     /**
-     * Set the name of the view and starts output buffering.
+     * Set the namespace of the view and starts output buffering.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    public function push($name);
+    public function push($namespace);
 
     /**
      * End output buffering and retrieves the buffered output.
@@ -20,26 +20,58 @@ interface TemplateContract
     public function endpush();
 
     /**
-     * Render JavaScript content associated with the specified name of the view.
+     * Include a file based on the provided namespace.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    public function renderJs($name);
+    public function _include($namespace);
 
     /**
-     * Render CSS content associated with the specified name of the view.
+     * Include a single file based on the provided namespace.
      *
-     * @param string $name
+     * @param string $namespace
      * @return void
      */
-    public function renderCss($name);
+    public function include_one($namespace);
 
     /**
-     * Render Component content associated with the specified name of the view.
+     * Require a file based on the provided namespace.
      *
-     * @param array|string $components
+     * @param string $namespace
      * @return void
      */
-    public function renderComponent($components);
+    public function _require($namespace);
+
+    /**
+     * Require a single file based on the provided namespace.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    public function require_one($namespace);
+
+    /**
+     * Render JavaScript content associated with name of the view.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    public function renderJs($namespace);
+
+    /**
+     * Render CSS content associated with name of the view.
+     *
+     * @param string $namespace
+     * @return void
+     */
+    public function renderCss($namespace);
+
+    /**
+     * Render Component content associated with name of the view.
+     *
+     * @param array|string $namespaces
+     * @return void
+     */
+    public function renderComponent($namespaces);
 }
