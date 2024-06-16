@@ -16,7 +16,7 @@ class Application extends Container implements ApplicationContract, KernelContra
      *
      * @var string
      */
-    const VERSION = '1.0.2';
+    const VERSION = '1.0.3';
 
     /**
      * Application root directory path.
@@ -224,6 +224,7 @@ class Application extends Container implements ApplicationContract, KernelContra
             'session' => [\Foundation\Session\Session::class, \Foundation\Contracts\Session\SessionContract::class],
             'validator' => [\Foundation\Validation\Validator::class, \Foundation\Contracts\Validation\ValidatorContract::class],
             'view' => [\Foundation\View\View::class, \Foundation\Contracts\View\ViewContract::class],
+            'template' => [\Foundation\View\Template::class, \Foundation\Contracts\View\TemplateContract::class]
             
         ] as $abstract => $aliases) {
             foreach ($aliases as $alias) {
