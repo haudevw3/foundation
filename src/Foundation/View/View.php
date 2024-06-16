@@ -88,7 +88,7 @@ class View implements ViewContract
      * @param string $view
      * @return array
      */
-    protected function parseView($view)
+    public function parseView($view)
     {
         $explode = explode('.', $view);
 
@@ -96,16 +96,31 @@ class View implements ViewContract
         // Check if the view configuration contains the namespace entry.
         // If it exists, this is the namespace registered via the service provider.
         // If it does not exist, it will be the default.
-        $namespace = isset(config('view.paths')[$explode[0]])
-                     ? $explode[0] : 'default';
+        $prefix = $explode[0];
+
+        $namespace = isset(config('view.paths')[$prefix])
+                     ? $prefix : 'default';
 
         $name = end($explode);
 
         unset($explode[0]);
         array_pop($explode);
 
-        $path =  config('view.paths')[$namespace].DIRECTORY_SEPARATOR.
-                     implode(DIRECTORY_SEPARATOR, $explode).$name.'.php';
+        $path = null;
+
+        if ($namespace == 'default') {
+            $path = config('view.paths')[$namespace].
+                    (($prefix != $name) ? DIRECTORY_SEPARATOR.$prefix : '');
+        } else {
+            $path = str_replace(
+                '/', DIRECTORY_SEPARATOR, config('view.paths')[$namespace]
+            );
+
+            $path = base_path($path);
+        }
+
+        $path = $path.DIRECTORY_SEPARATOR.
+                implode(DIRECTORY_SEPARATOR, $explode).$name.'.php';
 
         return [
             'name' => $name,

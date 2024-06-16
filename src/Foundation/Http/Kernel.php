@@ -87,9 +87,9 @@ class Kernel implements KernelContract
 
         $middleware = $this->getRouteMiddleware()[$middleware];
 
-        $instance = new $middleware;
+        $response = new $middleware;
 
-        $instance->handle($request, function ($request) use ($route) {
+        $response->handle($request, function ($request) use ($route) {
             return $this->route->runRoute($route, $request);
         });
     }

@@ -9,6 +9,7 @@ class ViewServiceProvider extends ServiceProvider
     public function register()
     {
         $this->registerView();
+        $this->registerTemplate();
     }
 
     /**
@@ -20,6 +21,18 @@ class ViewServiceProvider extends ServiceProvider
     {
         $this->app->singleton('view', function () {
             return new View;
+        });
+    }
+
+    /**
+     * Register the template.
+     *
+     * @return void
+     */
+    protected function registerTemplate()
+    {
+        $this->app->singleton('template', function ($app) {
+            return new Template($app['view']);
         });
     }
 }

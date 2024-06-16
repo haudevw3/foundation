@@ -370,3 +370,80 @@ if (! function_exists('view')) {
         return app('view')->make($name, $data, $mergeData);
     }
 }
+
+if (! function_exists('include_one')) {
+    /**
+     * Get contents for the given view.
+     *
+     * @param string $name
+     * @return void
+     */
+    function include_one($name)
+    {
+        return view($name);
+    }
+}
+
+if (! function_exists('push')) {
+    /**
+     * Set the name of the view and starts output buffering.
+     *
+     * @param string $name
+     * @return void
+     */
+    function push($name)
+    {
+        return app('template')->push($name);
+    }
+}
+
+if (! function_exists('endpush')) {
+    /**
+     * End output buffering and retrieves the buffered output.
+     *
+     * @return void
+     */
+    function endpush()
+    {
+        return app('template')->endpush();
+    }
+}
+
+if(! function_exists('render_js')) {
+    /**
+     * Render JavaScript content associated with the specified name of the view.
+     *
+     * @param string $name
+     * @return void
+     */
+    function render_js($name)
+    {
+        return app('template')->renderJs($name);
+    }
+}
+
+if(! function_exists('render_css')) {
+    /**
+     * Render CSS content associated with the specified name of the view.
+     *
+     * @param string $name
+     * @return void
+     */
+    function render_css($name)
+    {
+        return app('template')->renderCss($name);
+    }
+}
+
+if(! function_exists('render_component')) {
+    /**
+     * Render Component content associated with the specified name of the view.
+     *
+     * @param array|string $components
+     * @return void
+     */
+    function render_component($components)
+    {
+        return app('template')->renderComponent($components);
+    }
+}
