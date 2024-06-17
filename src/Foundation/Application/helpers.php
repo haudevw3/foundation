@@ -371,16 +371,30 @@ if (! function_exists('view')) {
     }
 }
 
+if(! function_exists('_namespace')) {
+    /**
+     * Get the namespace of the view.
+     *
+     * @param string $namespace
+     * @return string
+     */
+    function _namespace($namespace)
+    {
+        return app('template')->_namespace($namespace);
+    }
+}
+
 if (! function_exists('_include')) {
     /**
      * Include a file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $data
      * @return void
      */
-    function _include($namespace)
+    function _include($namespace, $data = null)
     {
-        return app('template')->_include($namespace);
+        return app('template')->_include($namespace, $data);
     }
 }
 
@@ -389,11 +403,12 @@ if (! function_exists('include_one')) {
      * Include a single file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $data
      * @return void
      */
-    function include_one($namespace)
+    function include_one($namespace, $data = null)
     {
-        return app('template')->include_one($namespace);
+        return app('template')->include_one($namespace, $data);
     }
 }
 
@@ -402,11 +417,12 @@ if (! function_exists('_require')) {
      * Require a file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $data
      * @return void
      */
-    function _require($namespace)
+    function _require($namespace, $data = null)
     {
-        return app('template')->_require($namespace);
+        return app('template')->_require($namespace, $data);
     }
 }
 
@@ -415,11 +431,12 @@ if (! function_exists('require_one')) {
      * Require a single file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $data
      * @return void
      */
-    function require_one($namespace)
+    function require_one($namespace, $data = null)
     {
-        return app('template')->require_one($namespace);
+        return app('template')->require_one($namespace, $data);
     }
 }
 
@@ -478,11 +495,11 @@ if(! function_exists('render_component')) {
     /**
      * Render Component content associated with name of the view.
      *
-     * @param array|string $namespaces
+     * @param string $namespace
      * @return void
      */
-    function render_component($namespaces)
+    function render_component($namespace)
     {
-        return app('template')->renderComponent($namespaces);
+        return app('template')->renderComponent($namespace);
     }
 }

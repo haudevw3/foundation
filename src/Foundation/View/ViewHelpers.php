@@ -10,7 +10,7 @@ trait ViewHelpers
      * @param string $namespace
      * @return array
      */
-    public function parseNamespace($namespace)
+    protected function parseNamespace($namespace)
     {
         $explode = explode('.', $namespace);
 
@@ -40,8 +40,8 @@ trait ViewHelpers
             $path = base_path($path);
         }
 
-        $path = $path.DIRECTORY_SEPARATOR.
-                implode(DIRECTORY_SEPARATOR, $explode).$name.'.php';
+        $path = $path.DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $explode).
+                ((count($explode) > 0) ? DIRECTORY_SEPARATOR : '').$name.'.php';
 
         return [
             'prefix' => $prefix,

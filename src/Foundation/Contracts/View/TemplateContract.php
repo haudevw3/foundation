@@ -20,36 +20,48 @@ interface TemplateContract
     public function endpush();
 
     /**
+     * Get the namespace of the view.
+     *
+     * @param string $namespace
+     * @return string
+     */
+    public function _namespace($namespace);
+
+    /**
      * Include a file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $name
      * @return void
      */
-    public function _include($namespace);
+    public function _include($namespace, $data = null);
 
     /**
      * Include a single file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $data
      * @return void
      */
-    public function include_one($namespace);
+    public function include_one($namespace, $data = null);
 
     /**
      * Require a file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $data
      * @return void
      */
-    public function _require($namespace);
+    public function _require($namespace, $data = null);
 
     /**
      * Require a single file based on the provided namespace.
      *
      * @param string $namespace
+     * @param mixed $data
      * @return void
      */
-    public function require_one($namespace);
+    public function require_one($namespace, $data = null);
 
     /**
      * Render JavaScript content associated with name of the view.
@@ -70,8 +82,8 @@ interface TemplateContract
     /**
      * Render Component content associated with name of the view.
      *
-     * @param array|string $namespaces
+     * @param string $namespace
      * @return void
      */
-    public function renderComponent($namespaces);
+    public function renderComponent($namespace);
 }
