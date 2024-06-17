@@ -78,12 +78,4 @@ interface TemplateContract
      * @return void
      */
     public function renderCss($namespace);
-
-    /**
-     * Render Component content associated with name of the view.
-     *
-     * @param string $namespace
-     * @return void
-     */
-    public function renderComponent($namespace);
 }

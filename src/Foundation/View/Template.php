@@ -75,13 +75,9 @@ class Template implements TemplateContract
                 $this->pushStack(
                     $this->namespace(), 'css', $value
                 );
-            } else if (preg_match('~js~', $value)) {
+            } else {
                 $this->pushStack(
                     $this->namespace(), 'js', $value
-                );
-            } else if (preg_match('~php~', $value)) {
-                $this->pushStack(
-                    $this->namespace(), 'php', $value
                 );
             }
         }
@@ -129,8 +125,10 @@ class Template implements TemplateContract
      */
     public function renderJs($namespace)
     {
-        foreach ($this->getStack($namespace)['js'] as $value) {
-            echo '<script src="'.$value.'"></script>';
+        if (isset($this->getStack($namespace)['js'])) {
+            foreach ($this->getStack($namespace)['js'] as $value) {
+                echo '<script src="'.$value.'"></script>';
+            }
         }
     }
 
@@ -142,21 +140,10 @@ class Template implements TemplateContract
      */
     public function renderCss($namespace)
     {
-        foreach ($this->getStack($namespace)['css'] as $value) {
-            echo '<link rel="stylesheet" href="'.$value.'">';
-        }
-    }
-
-    /**
-     * Render Component content associated with name of the view.
-     *
-     * @param string $namespace
-     * @return void
-     */
-    public function renderComponent($namespace)
-    {
-        foreach ($this->getStack($namespace)['php'] as $namespace) {
-            $this->_require($namespace);
+        if (isset($this->getStack($namespace)['css'])) {
+            foreach ($this->getStack($namespace)['css'] as $value) {
+                echo '<link rel="stylesheet" href="'.$value.'">';
+            }
         }
     }
 

@@ -37,6 +37,16 @@ abstract class Model
     /**
      * Get a new query builder.
      *
+     * @return \Foundation\Contracts\Database\QueryBuilder
+     */
+    public function newQuery()
+    {
+        return app('db')->table($this->table);
+    }
+
+    /**
+     * Get a new eloquent builder.
+     *
      * @return \Foundation\Database\Eloquent\Builder
      */
     public function newModelQuery()

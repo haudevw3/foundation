@@ -307,7 +307,7 @@ if (! function_exists('route')) {
             $uri = str_replace('?', $params, $uri);
         }
 
-        return $uri;
+        return '/'.trim($uri, '/');
     }
 }
 
@@ -488,18 +488,5 @@ if(! function_exists('render_css')) {
     function render_css($namespace)
     {
         return app('template')->renderCss($namespace);
-    }
-}
-
-if(! function_exists('render_component')) {
-    /**
-     * Render Component content associated with name of the view.
-     *
-     * @param string $namespace
-     * @return void
-     */
-    function render_component($namespace)
-    {
-        return app('template')->renderComponent($namespace);
     }
 }
