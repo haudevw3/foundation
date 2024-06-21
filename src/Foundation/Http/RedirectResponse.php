@@ -43,13 +43,13 @@ class RedirectResponse implements RedirectResponseContract
      */
     public function withInput(array $input = null)
     {
+        $result = $this->request->all();
+        
         if (! is_null($input)) {
-            $result = $this->request->all();
-
             $this->removeItems($result, $input);
-
-            $this->session->set('olds', $result);
         }
+
+        $this->session->set('olds', $result);
 
         return $this;
     }

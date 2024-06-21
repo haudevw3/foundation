@@ -5,7 +5,7 @@ namespace Foundation\Contracts\Http;
 interface RequestContract
 {
     /**
-     * Gets the input parameters from the current request.
+     * Get the input parameters from the current request.
      *
      * @return array
      */
@@ -93,7 +93,7 @@ interface RequestContract
     public function all();
 
     /**
-     * Checks whether the given input key exists or not.
+     * Check whether the given input key exists or not.
      *
      * @param string $key
      * @return bool
@@ -101,7 +101,7 @@ interface RequestContract
     public function has($key);
 
     /**
-     * Checks if multiple given input keys exist or not.
+     * Check if multiple given input keys exist or not.
      *
      * @param array $keys
      * @return bool
@@ -119,7 +119,7 @@ interface RequestContract
 
     /**
      * 
-     * Gets an the specified keyword input value.
+     * Get an the specified keyword input value.
      *
      * @param string $key
      * @return mixed
@@ -128,7 +128,7 @@ interface RequestContract
 
     /**
      * 
-     * Gets input values ​​from specified keys.
+     * Get input values ​​from specified keys.
      *
      * @param array $keys
      * @return array
@@ -136,7 +136,7 @@ interface RequestContract
     public function only($keys);
 
     /**
-     * Gets all input values ​​except specified keys.
+     * Get all input values ​​except specified keys.
      *
      * @param array $keys
      * @return array
@@ -165,7 +165,8 @@ interface RequestContract
      * @param array $data
      * @param array $rules
      * @param array $messages
+     * @param array $default
      * @return mixed
      */
-    public function validate(array $data, array $rules, array $messages);
+    public function validate(array $data, array $rules, array $messages, array $default = null);
 }

@@ -1,7 +1,7 @@
 {
     "name": "haudevw3/foundation",
     "description": "A simple PHP foundation",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "type": "library",
     "license": "MIT",
     "authors": [

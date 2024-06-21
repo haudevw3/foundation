@@ -109,7 +109,7 @@ trait PaginatorHelpers
     protected function setItems($items)
     {
         $this->items = array_slice(
-            $items, $this->from(), $this->to()
+            $items, $this->from(), $this->to() - $this->from()
         );
     }
 
@@ -132,9 +132,7 @@ trait PaginatorHelpers
      */
     protected function setPath(Request $request, $path = '/')
     {
-        $this->path = $path.substr(
-            $request->path(), 0, strlen($request->path()) - 1
-        );
+        $this->path = $path.$request->path().'-';
     }
 
     /**
@@ -209,7 +207,7 @@ trait PaginatorHelpers
     protected function setCurrentPage($currentPage)
     {
         $this->currentPage = (
-            ($currentPage < 1) || ($currentPage > $this->lastPage) ? 1 : $currentPage
+            ($currentPage < 1) || ($currentPage > $this->lastPage()) ? 1 : $currentPage
         );
     }
 
@@ -332,7 +330,7 @@ trait PaginatorHelpers
      */
     public function firstPageUrl()
     {
-        return $this->path.'1';
+        return $this->path().'1';
     }
 
     /**
@@ -342,7 +340,7 @@ trait PaginatorHelpers
      */
     public function lastPageUrl()
     {
-        return $this->path.$this->lastPage;
+        return $this->path().$this->lastPage();
     }
 
     /**
@@ -353,7 +351,7 @@ trait PaginatorHelpers
     public function nextPageUrl()
     {
         return (
-            (($this->currentPage + 1) < $this->lastPage) ? $this->path.($this->currentPage + 1) : null
+            (($this->currentPage() + 1) > $this->lastPage()) ? null : $this->path().($this->currentPage() + 1)
         );
     }
 
@@ -365,7 +363,7 @@ trait PaginatorHelpers
     public function previousPageUrl()
     {
         return (
-            ((($this->currentPage - 1) > 0) || ! is_null($this->nextPageUrl())) ? $this->path.($this->currentPage - 1) : null
+            (($this->currentPage() - 1) <= 0 || is_null($this->nextPageUrl())) ? null : $this->path().($this->currentPage() - 1)
         );
     }
 }

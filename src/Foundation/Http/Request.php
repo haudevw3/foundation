@@ -12,7 +12,7 @@ class Request implements RequestContract
     use Macroable;
 
     /**
-     * Saves the current request's route parameters if any.
+     * Save the current request's route parameters if any.
      *
      * @var array
      */
@@ -82,7 +82,9 @@ class Request implements RequestContract
      */
     public function path()
     {
-        return isset($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'], '/') : '';
+        preg_match('~(\S+)[-?]~', $this->uri(), $matches);
+
+        return isset($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'], '/') : $matches[1];
     }
 
     /**
@@ -180,7 +182,13 @@ class Request implements RequestContract
         $result = [];
 
         foreach ($data as $key => $value) {
-            $result[$key] = filter_input($type, $key, $filter, $options);
+            $temp = filter_input($type, $key, FILTER_DEFAULT, FILTER_REQUIRE_ARRAY);
+
+            if ($temp) {
+                $result[$key] = $temp;
+            } else {
+                $result[$key] = filter_input($type, $key, $filter, $options);
+            }
         }
 
         return $result;
@@ -309,7 +317,47 @@ class Request implements RequestContract
      */
     public function file($key)
     {
-        return $this->hasFile($key) ? $_FILES[$key] : '';
+        if (! $this->hasFile($key)) {
+            return null;
+        }
+
+        $files = $_FILES[$key];
+        $name = $files['name'];
+        $type = $files['type'];
+        $tmpName = $files['tmp_name'];
+        $error = $files['error'];
+        $size = $files['size'];
+
+        if (is_array($name)) {
+            $uploadedFiles = [];
+
+            for ($i = 0; $i < count($name); $i++) {
+                $uploadedFiles[] = $this->createUploadedFile(
+                    $name[$i], $type[$i], $tmpName[$i], $error[$i], $size[$i]
+                );
+            }
+
+            return $uploadedFiles;
+        }
+
+        return $this->createUploadedFile($name, $type, $tmpName, $error, $size);
+    }
+
+    /**
+     * Create a new uploaded file instance.
+     *
+     * @param string $originalName
+     * @param string $mimeType
+     * @param string $realPath
+     * @param int $error
+     * @param int $size
+     * @return void
+     */
+    protected function createUploadedFile($originalName, $mimeType, $realPath, $error, $size)
+    {
+        return new UploadedFile(
+            $originalName, $mimeType, $realPath, $error, $size
+        );
     }
 
     /**
@@ -333,14 +381,15 @@ class Request implements RequestContract
      * @param array $data
      * @param array $rules
      * @param array $messages
+     * @param array $default
      * @return \Foundation\Contracts\Validation\ValidatorContract
      */
-    public function validate(array $data, array $rules, array $messages)
+    public function validate(array $data, array $rules, array $messages, array $default = null)
     {
         $validator = $this->validator->make($data, $rules, $messages);
 
         if ($validator->fails()) {
-            return $this->redirector->back()->withInput($this->all())->withErrors();
+            return $this->redirector->back()->withInput($default)->withErrors();
         }
 
         return $validator;

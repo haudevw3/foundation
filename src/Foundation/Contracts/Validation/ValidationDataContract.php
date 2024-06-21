@@ -111,6 +111,18 @@ interface ValidationDataContract
     public function exists($query, $explode, $value);
 
     /**
+     * Checks if the given value exists in the database with the given rule.
+     * Except itself.
+     *
+     * @param \Foundation\Database\Query\Builder $query
+     * @param string $explode
+     * @param string|int $id
+     * @param string $value
+     * @return bool
+     */
+    public function except($query, $explode, $id, $value);
+
+    /**
      * Checks if the given value is in the correct phone format with the given rules.
      *
      * @param string $value

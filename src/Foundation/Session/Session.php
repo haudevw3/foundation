@@ -261,7 +261,7 @@ class Session implements SessionContract
      */
     public function previousUrl()
     {
-        return $this->get('previous_url');
+        return $this->get('previous_url')[0];
     }
 
     /**
@@ -272,6 +272,8 @@ class Session implements SessionContract
      */
     public function setPreviousUrl($url)
     {
+        $url = '/'.trim($url, '/');
+
         if (! $this->exists('previous_url')) {
             $this->set('previous_url', [$url]);
         } else {

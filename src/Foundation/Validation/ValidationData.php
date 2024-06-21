@@ -104,6 +104,13 @@ class ValidationData implements ValidationDataContract
 
                     break;
 
+                case 'except':
+                    if ($this->except($query, $param, $data['id'], $data[$attribute])) {
+                        $this->mergeAttributeWithRule($result, $attribute, $rule);
+                    }
+
+                    break;
+
                 case 'phone':
                     if (! $this->phone($data[$attribute])) {
                         $this->mergeAttributeWithRule($result, $attribute, $rule);
@@ -300,6 +307,33 @@ class ValidationData implements ValidationDataContract
         $data = $query->table($table)->where($column, $value)->first();
 
         return ! empty($data) ? true : false;
+    }
+
+    /**
+     * Checks if the given value exists in the database with the given rule.
+     * Except itself.
+     *
+     * @param \Foundation\Database\Query\Builder $query
+     * @param string $explode
+     * @param string|int $id
+     * @param string $value
+     * @return bool
+     */
+    public function except($query, $explode, $id, $value)
+    {
+        $this->explodeExplicitRule($explode, $table, $column);
+
+        $user = $query->table($table)->where('id', $id)->first([$column]);
+
+        $bool = null;
+
+        if ($user[$column] == $value) {
+            $bool = false;
+        } else {
+            $bool = $this->exists($query, $explode, $value) ? true : false;
+        }
+
+        return $bool;
     }
 
     /**

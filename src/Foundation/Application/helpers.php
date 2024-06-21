@@ -181,7 +181,7 @@ if (! function_exists('error')) {
      * @param string $default
      * @return mixed
      */
-    function old($key, $default = 'errors')
+    function error($key, $default = 'errors')
     {
         return app('session')->consume($default, $key);
     }

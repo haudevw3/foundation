@@ -138,10 +138,23 @@ class Container implements ArrayAccess, ContainerContract
     /**
      * Get the alias for an abstract if available.
      *
+     * @param string $abstract
+     * @return string
+     */
+    protected function getAlias($abstract)
+    {
+        return isset($this->aliases[$abstract]) 
+                ? $this->aliases[$abstract]
+                : $abstract;
+    }
+
+    /**
+     * Get an abstract for the alias if available.
+     *
      * @param string $name
      * @return string
      */
-    protected function getAlias($name)
+    protected function getAbstract($name)
     {
         return isset($this->abstractAliases[$name])
                 ? end($this->abstractAliases[$name])
@@ -213,7 +226,7 @@ class Container implements ArrayAccess, ContainerContract
 
         if ($shared) {
             if ($this->isAlias($abstract)) {
-                $abstract = $this->getAlias($abstract);
+                $abstract = $this->getAbstract($abstract);
             }
 
             $this->setInstance($abstract, $object);
@@ -426,6 +439,12 @@ class Container implements ArrayAccess, ContainerContract
         // Draw a map with dependencies.
         // Build the dependency map.
         // Return the object to be built.
+        if ($this->isAlias($concrete)) {
+            $concrete = $this->getAlias($concrete);
+            
+            return $this->get($concrete);
+        }
+        
         $this->bindIf($concrete);
 
         $this->drawMap($concrete);
@@ -547,7 +566,7 @@ class Container implements ArrayAccess, ContainerContract
     public function get($name)
     {
         if ($this->isAlias($name)) {
-            $name = $this->getAlias($name);
+            $name = $this->getAbstract($name);
         }
         
         return $this->instances[$name];
