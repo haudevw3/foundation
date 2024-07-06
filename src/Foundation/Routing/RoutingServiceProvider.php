@@ -3,6 +3,7 @@
 namespace Foundation\Routing;
 
 use Foundation\Http\Request;
+use Foundation\Http\Response;
 use Foundation\Support\ServiceProvider;
 
 class RoutingServiceProvider extends ServiceProvider
@@ -10,6 +11,7 @@ class RoutingServiceProvider extends ServiceProvider
     public function register()
     {
         $this->registerRequest();
+        $this->registerResponse();
         $this->registerRedirector();
         $this->registerRoute();
     }
@@ -23,6 +25,18 @@ class RoutingServiceProvider extends ServiceProvider
     {
         $this->app->singleton('request', function () {
             return new Request;
+        });
+    }
+
+    /**
+     * Register the response.
+     *
+     * @return void
+     */
+    protected function registerResponse()
+    {
+        $this->app->singleton('response', function () {
+            return new Response;
         });
     }
 

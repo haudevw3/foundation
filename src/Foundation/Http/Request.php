@@ -28,7 +28,7 @@ class Request implements RequestContract
     /**
      * The redirector implementation.
      *
-     * @var Foundation\Contracts\Routing\RedirectorContract
+     * @var \Foundation\Contracts\Routing\RedirectorContract
      */
     protected $redirector;
 
@@ -255,7 +255,7 @@ class Request implements RequestContract
      */
     public function hasFile($key)
     {
-        return isset($_FILES[$key]);
+        return isset($_FILES[$key]) && ($_FILES[$key]['error'] == 0);
     }
 
     /**
@@ -409,7 +409,7 @@ class Request implements RequestContract
     /**
      * Set the redirector implementation.
      *
-     * @param Foundation\Contracts\Routing\RedirectorContract $redirector
+     * @param \Foundation\Contracts\Routing\RedirectorContract $redirector
      * @return void
      */
     public function setRedirector(RedirectorContract $redirector)

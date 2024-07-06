@@ -148,13 +148,13 @@ class UploadedFile implements UploadedFileContract
      *
      * @param string $path
      * @param string $name
-     * @return void
+     * @return string
      */
     public function move($path, $name = null)
     {
         $path = base_path($path);
 
-        $this->saveTo($path, $name);
+        return $this->saveTo($path, $name);
     }
 
     /**
@@ -162,13 +162,13 @@ class UploadedFile implements UploadedFileContract
      *
      * @param string $path
      * @param string $name
-     * @return void
+     * @return string
      */
     public function store($path = null, $name = null)
     {   
         $path = is_null($path) ? $this->getDisk()['root'] : storage_path($path);
 
-        $this->saveTo($path, $name);
+        return $this->saveTo($path, $name);
     }
 
     /**
@@ -176,7 +176,7 @@ class UploadedFile implements UploadedFileContract
      *
      * @param string $path
      * @param string $name
-     * @return void
+     * @return string
      */
     protected function saveTo($path, $name)
     {
@@ -185,6 +185,8 @@ class UploadedFile implements UploadedFileContract
                 : $name.'.'.$this->getClientOriginalExtension();
 
         move_uploaded_file($this->getRealPath(), trim($path).DIRECTORY_SEPARATOR.$name);
+
+        return $name;
     }
 
     /**

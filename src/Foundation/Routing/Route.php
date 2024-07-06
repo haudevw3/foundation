@@ -243,7 +243,10 @@ class Route implements RouteContract
         
         if ($this->isCallGroup()) {
             $this->keepOnlyBindings(
-                ['prefix', ($this->getMiddleware()) ? null : 'middleware']
+                [
+                    $this->getPrefix() ? 'prefix' : null,
+                    $this->getMiddleware() ? 'middleware' : null
+                ]
             );
         } else {
             $this->resetBindings();

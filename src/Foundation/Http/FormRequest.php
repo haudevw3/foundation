@@ -67,7 +67,7 @@ abstract class FormRequest extends Request
      */
     public function validated()
     {
-        $validator = $this->validator->make(
+        $validator = validator()->make(
             $this->all(), $this->rules, $this->messages
         );
 

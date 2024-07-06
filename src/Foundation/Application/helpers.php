@@ -281,6 +281,23 @@ if (! function_exists('request')) {
     }
 }
 
+if (! function_exists('response')) {
+    /**
+     * Return a new response from the application.
+     *
+     * @param string|array|null|\Foundation\Contracts\View\View $content
+     * @param int $status
+     * @param array $headers
+     * @return mixed|\Foundation\Http\Response
+     */
+    function response($content = '', $status = 200, array $headers = [])
+    {
+        if (func_num_args() === 0) {
+            return app('response');
+        }
+    }
+}
+
 if (! function_exists('route')) {
     /**
      * Generate the URL to a named route.

@@ -19,7 +19,7 @@ class CommonRules
         'max', 'regex', 'size', 'in', 'not_in',
         'accepted', 'active_url', 'alpha', 'alpha_dash',
         'alpha_num', 'distinct', 'digits', 'digits_between',
-        'phone'
+        'phone', 'except'
     ];
 
     /**

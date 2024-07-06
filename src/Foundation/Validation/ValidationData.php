@@ -173,8 +173,10 @@ class ValidationData implements ValidationDataContract
             $result['fails'] = true;
         }
 
-        foreach ($result['invalid_rule'] as $attribute => $rule) {
-            $result['message_keys'][$attribute] = $attribute.'.'.$rule[0];
+        if (! empty($result['invalid_rule'])) {
+            foreach ($result['invalid_rule'] as $attribute => $rule) {
+                $result['message_keys'][$attribute] = $attribute.'.'.$rule[0];
+            }
         }
     }
 

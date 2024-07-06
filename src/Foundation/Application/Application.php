@@ -16,7 +16,7 @@ class Application extends Container implements ApplicationContract, KernelContra
      *
      * @var string
      */
-    const VERSION = '1.0.7';
+    const VERSION = '1.0.8';
 
     /**
      * Application root directory path.
@@ -220,6 +220,7 @@ class Application extends Container implements ApplicationContract, KernelContra
             'log' => [\Foundation\Log\Logger::class, \Foundation\Contracts\Log\LoggerContract::class],
             'redirect' => [\Foundation\Routing\Redirector::class, \Foundation\Contracts\Routing\RedirectorContract::class],
             'request' => [\Foundation\Http\Request::class, \Foundation\Contracts\Http\RequestContract::class],
+            'response' => [\Foundation\Http\Response::class],
             'route' => [\Foundation\Routing\Route::class, \Foundation\Contracts\Routing\RouteContract::class],
             'session' => [\Foundation\Session\Session::class, \Foundation\Contracts\Session\SessionContract::class],
             'validator' => [\Foundation\Validation\Validator::class, \Foundation\Contracts\Validation\ValidatorContract::class],

@@ -127,7 +127,7 @@ class Template implements TemplateContract
     {
         if (isset($this->getStack($namespace)['js'])) {
             foreach ($this->getStack($namespace)['js'] as $value) {
-                echo '<script src="'.$value.'"></script>';
+                echo '<script src="'.$value.'?='.time().'"></script>';
             }
         }
     }
@@ -142,7 +142,7 @@ class Template implements TemplateContract
     {
         if (isset($this->getStack($namespace)['css'])) {
             foreach ($this->getStack($namespace)['css'] as $value) {
-                echo '<link rel="stylesheet" href="'.$value.'">';
+                echo '<link rel="stylesheet" href="'.$value.'?='.time().'">';
             }
         }
     }
