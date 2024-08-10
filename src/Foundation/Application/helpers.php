@@ -318,7 +318,7 @@ if (! function_exists('route')) {
 
         if (is_array($params)) {
             foreach ($params as $key => $value) {
-                $uri = str_replace('?', ($key == 'page') ? "$key-$value" : $value, $uri);
+                $uri = preg_replace('/\?/', ($key == 'page') ? "$key-$value" : $value, $uri);
             }
         } else {
             $uri = str_replace('?', $params, $uri);

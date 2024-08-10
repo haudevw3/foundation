@@ -10,10 +10,14 @@ class RouteCompiled
      *
      * @param array $params
      * @param string $uri
-     * @return string
+     * @return string|null
      */
     public static function replace($params, $uri)
     {
+        if (empty($params)) {
+            return null;
+        }
+        
         $compiled = $uri;
             
         foreach ($params as $key => $value) {
@@ -32,14 +36,19 @@ class RouteCompiled
      */
     public static function pattern($params, $uri)
     {
+        if (empty($params)) {
+            $uri = ($uri == '/') ? '' : $uri;
+            return "/^$uri(?:\?([^\/]*))?$/";
+        }
+
         $explode = explode('/', $uri);
 
         $compiled = implode('\/', $explode);
 
         foreach ($params as $key => $value) {
-            $compiled = preg_replace('/\{('.$key.')\}/', '([^\/]+)', $compiled);
+            $compiled = preg_replace('/\{('.$key.')\}/', '([^\/\?]+)', $compiled);
         }
 
-        return "/^$compiled$/";
+        return "/^$compiled(?:\?([^\/]*))?$/";
     }
 }

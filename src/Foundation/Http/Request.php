@@ -202,10 +202,6 @@ class Request implements RequestContract
     public function all()
     {
         $result = [];
-        
-        if (! empty($this->getParamFromRequest())) {
-            return $this->getParamFromRequest();
-        }
 
         if ($this->isMethod('GET') && ! empty($this->queryString())) {
             $result = $this->filterInput($_GET, INPUT_GET);
@@ -213,6 +209,10 @@ class Request implements RequestContract
 
         if ($this->isMethod('POST')) {
             $result = $this->filterInput($_POST, INPUT_POST);
+        }
+
+        if (! empty($this->getParamFromRequest())) {
+            $result = array_merge($result, $this->getParamFromRequest());
         }
 
         return $result;

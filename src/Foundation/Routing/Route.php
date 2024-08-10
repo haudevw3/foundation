@@ -105,14 +105,8 @@ class Route implements RouteContract
         $this->bind('method', $method);
         $this->bind('action', $action);
         $this->bind('params', RouteUri::parseParams($this->uri()));
-        $this->bind('replace', $this->getParams() ? RouteCompiled::replace(
-            $this->getParams(),
-            $this->uri()
-        ) : null);
-        $this->bind('pattern', $this->getParams() ? RouteCompiled::pattern(
-            $this->getParams(),
-            $this->uri()
-        ) : null);
+        $this->bind('replace', RouteCompiled::replace($this->getParams(), $this->uri()));
+        $this->bind('pattern', RouteCompiled::pattern($this->getParams(), $this->uri()));
 
         if ($action instanceof Closure) {
             $this->addToCollections($this->getBindings());
@@ -275,16 +269,14 @@ class Route implements RouteContract
      */
     protected function setWhere($wheres)
     {
-        $explode = explode('/', $this->uri());
-
-        $pattern = implode('\/', $explode);
+        $pattern = $this->getBinding('pattern');
 
         foreach ($wheres as $name => $expression) {
             $pattern = preg_replace('/\{'.$name.'\?\}/', $expression, $pattern);
         }
 
         $this->bind('pattern');
-        $this->bind('where', "/^$pattern$/");
+        $this->bind('where', $pattern);
     }
 
     /**
@@ -297,7 +289,7 @@ class Route implements RouteContract
     protected function parseWhere($name, $expression)
     {
         if (is_null($expression)) {
-            $expression = '([^\/]+)';
+            $expression = '([^\/\?]+)';
         }
 
         if (is_array($name)) {
