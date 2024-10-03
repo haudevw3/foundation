@@ -19,8 +19,8 @@ trait Macroable
     /**
      * Register a macro.
      *
-     * @param string $name
-     * @param object|callable $macro
+     * @param  string           $name
+     * @param  object|callable  $macro
      * @return void
      */
     public static function macro($name, $macro)
@@ -31,8 +31,8 @@ trait Macroable
     /**
      * Mix all method another object into the class.
      *
-     * @param object $mixin
-     * @param bool $replace
+     * @param  object  $mixin
+     * @param  bool    $replace
      * @return void
      * 
      * @throws \ReflectionException
@@ -54,7 +54,7 @@ trait Macroable
     /**
      * Checks if macro is registered.
      *
-     * @param string $name
+     * @param  string  $name
      * @return bool
      */
     public static function hasMacro($name)
@@ -75,13 +75,13 @@ trait Macroable
     /**
      * Dynamically handle calls to the class.
      *
-     * @param string $method
-     * @param array $params
+     * @param  string  $method
+     * @param  array   $parameters
      * @return mixed
      * 
      * @throws \BadMethodCallException
      */
-    public static function __callStatic($method, $params)
+    public static function __callStatic($method, $parameters)
     {
         if (! static::hasMacro($method)) {
             throw new BadMethodCallException(sprintf(
@@ -95,19 +95,19 @@ trait Macroable
             $macro = $macro->bindTo(null, static::class);
         }
 
-        return $macro(...$params);
+        return $macro(...$parameters);
     }
 
     /**
      * Dynamically handle calls to the class.
      *
-     * @param string $method
-     * @param array $params
+     * @param  string  $method
+     * @param  array   $parameters
      * @return mixed
      * 
      * @throws \BadMethodCallException
      */
-    public function __call($method, $params)
+    public function __call($method, $parameters)
     {
         if (! static::hasMacro($method)) {
             throw new BadMethodCallException(sprintf(
@@ -121,6 +121,6 @@ trait Macroable
             $macro = $macro->bindTo($this, static::class);
         }
 
-        return $macro(...$params);
+        return $macro(...$parameters);
     }
 }
