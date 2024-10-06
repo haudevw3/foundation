@@ -2,138 +2,101 @@
 
 namespace Foundation\Routing;
 
-use Closure;
 use Foundation\Container\Container;
-use Foundation\Contracts\Routing\RouteContract;
-use Foundation\Contracts\Routing\RouteNameAlreadyExistsException;
-use Foundation\Http\Request;
-use Foundation\Macroable\Traits\Macroable;
+use Foundation\Support\Arr;
+use Symfony\Component\Routing\Route as SymfonyRoute;
 
-class Route implements RouteContract
+class Route
 {
-    use Macroable, RouteBinding, RouteCollection;
-
     /**
-     * The URI pattern for the route.
+     * The URI pattern the route responds to.
      *
      * @var string
      */
     protected $uri;
 
     /**
-     * Indicates whether the current route is part of a group call.
+     * The HTTP method the route responds to.
      *
-     * @var bool
+     * @var array
      */
-    protected $isCallGroup;
+    protected $methods;
 
     /**
-     * The container instance used by the route.
+     * The route action array.
+     *
+     * @var array
+     */
+    protected $action;
+
+    /**
+     * The array of matched parameters.
+     *
+     * @var array|null
+     */
+    protected $parameters;
+
+    /**
+     * The router instance used by the route.
+     *
+     * @var \Foundation\Routing\Router
+     */
+    protected $router;
+
+    /**
+     * The route URI instance used by the route.
+     *
+     * @var \Foundation\Routing\RouteUri
+     */
+    protected $routeUri;
+
+    /**
+     * The route where instance used by the route.
+     *
+     * @var \Foundation\Routing\RouteWhere
+     */
+    protected $routeWhere;
+
+    /**
+     * The container instance.
      *
      * @var \Foundation\Container\Container
      */
     protected $container;
 
     /**
-     * Register a new GET route with the router.
+     * Create a new route instance.
      *
-     * @param string $uri
-     * @param array|\Closure $action
-     * @return $this
-     */
-    public function get($uri, $action)
-    {
-        $this->addRoute('GET', $uri, $action);
-
-        return $this;
-    }
-
-    /**
-     * Register a new POST route with the router.
-     *
-     * @param string $uri
-     * @param array|\Closure $action
-     * @return $this
-     */
-    public function post($uri, $action)
-    {
-        $this->addRoute('POST', $uri, $action);
-
-        return $this;
-    }
-
-    /**
-     * Register a new PUT route with the router.
-     *
-     * @param string $uri
-     * @param array|\Closure $action
-     * @return $this
-     */
-    public function put($uri, $action)
-    {
-        $this->addRoute('PUT', $uri, $action);
-
-        return $this;
-    }
-
-    /**
-     * Register a new DELETE route with the router.
-     *
-     * @param string $uri
-     * @param array|\Closure $action
-     * @return $this
-     */
-    public function delete($uri, $action)
-    {
-        $this->addRoute('DELETE', $uri, $action);
-    }
-
-    /**
-     * Add a route with the specified method, URI, and action to the route bindings.
-     *
-     * @param string $method
-     * @param string $uri
-     * @param array|\Closure $action
+     * @param  array|string    $methods
+     * @param  string          $uri
+     * @param  array|\Closure  $action
      * @return void
      */
-    protected function addRoute($method, $uri, $action)
+    public function __construct($methods, $uri, $action)
     {
-        $this->bind('uri', $this->setUri(
-            $this->getPrefix() ? ($this->getPrefix().'/'.trim($uri)) : trim($uri)
-        )->uri());
+        $this->uri = $uri;
+        $this->methods = (array) $methods;
+        $this->action = $this->parseAction(Arr::except($action, ['prefix', 'middleware']));
 
-        $this->bind('method', $method);
-        $this->bind('action', $action);
-        $this->bind('params', RouteUri::parseParams($this->uri()));
-        $this->bind('replace', RouteCompiled::replace($this->getParams(), $this->uri()));
-        $this->bind('pattern', RouteCompiled::pattern($this->getParams(), $this->uri()));
-
-        if ($action instanceof Closure) {
-            $this->addToCollections($this->getBindings());
+        if (in_array('GET', $this->methods) && ! in_array('HEAD', $this->methods)) {
+            $this->methods[] = 'HEAD';
         }
+
+        $this->prefix(is_array($action) ? Arr::get($action, 'prefix', '') : '');
+        $this->middleware(is_array($action) ? Arr::get($action, 'middleware', ['web']) : ['web']);
     }
 
     /**
-     * Get parameters from binding.
+     * Parse the route action into a standard array.
      *
-     * @return array|null
+     * @param  array|\Closure  $action
+     * @return array
+     * 
+     * @throws \LogicException
      */
-    protected function getParams()
+    protected function parseAction($action)
     {
-        return $this->getBinding('params');
-    }
-
-    /**
-     * Add a prefix to the route URI.
-     *
-     * @param string $prefix
-     * @return $this
-     */
-    public function prefix($prefix)
-    {
-        $this->bind('prefix', trim($prefix, '/'));
-
-        return $this;
+        return RouteAction::parse($this->uri, $action);
     }
 
     /**
@@ -141,30 +104,100 @@ class Route implements RouteContract
      *
      * @return string|null
      */
-    protected function getPrefix()
+    public function getPrefix()
     {
-        return $this->getBinding('prefix') ?? null;
+        return $this->action['prefix'] ?? null;
     }
 
     /**
-     * Get the URI associated with the route.
+     * Add a prefix to the route URI.
+     *
+     * @param  string  $prefix
+     * @return $this
+     */
+    public function prefix($prefix)
+    {
+        $prefix = $prefix ?? '';
+
+        $this->updatePrefixOnAction($prefix);
+
+        $uri = trim(trim($prefix, '/').'/'.trim($this->uri, '/'), '/');
+
+        return $this->setUri($uri);
+    }
+
+    /**
+     * Update the prefix attribute on the action array.
+     *
+     * @param  string  $prefix
+     * @return void
+     */
+    protected function updatePrefixOnAction($prefix)
+    {
+        if (! empty($prefix)) {
+            $prefix = trim(trim($prefix, '/').'/'.trim($this->action['prefix'] ?? '', '/'), '/');
+        }
+        
+        $this->action['prefix'] = $prefix;
+    }
+
+    /**
+     * Get the URI of the route.
      *
      * @return string
      */
-    protected function uri()
+    public function uri()
     {
         return $this->uri;
     }
 
     /**
-     * Set URI for the route.
+     * Set the URI attribute on the route.
      *
-     * @param string $uri
+     * @param  string  $uri
      * @return $this
      */
     protected function setUri($uri)
     {
         $this->uri = $uri;
+
+        $this->routeUri = RouteUri::parse($uri);
+
+        return $this;
+    }
+
+    /**
+     * Get the method of the route.
+     *
+     * @return array
+     */
+    public function methods()
+    {
+        return $this->methods;
+    }
+
+    /**
+     * Set a regular expression requirement on the route.
+     *
+     * @param  array|string  $name
+     * @param  string|null   $expression
+     * @return $this
+     */
+    public function where($name, $expression = null)
+    {
+        return $this->setWhere($name, $expression);
+    }
+
+    /**
+     * Set the where attribute on the route.
+     *
+     * @param  array   $name
+     * @param  string  $expression
+     * @return $this
+     */
+    protected function setWhere($name, $expression = null)
+    {
+        $this->routeWhere = RouteWhere::parse($name, $expression);
 
         return $this;
     }
@@ -172,202 +205,94 @@ class Route implements RouteContract
     /**
      * Set the middleware attached to the route.
      *
-     * @param array|string $middleware
+     * @param  array|string  $middleware
      * @return $this
      */
     public function middleware($middleware)
     {
-        $this->bind('middleware', $middleware);
+        if (! is_array($middleware)) {
+            $middleware = func_get_args();
+        }
+
+        foreach ($middleware as $index => $value) {
+            $middleware[$index] = (string) $value;
+        }
+
+        $this->action['middleware'] = array_merge(
+            (array) ($this->action['middleware'] ?? []), $middleware
+        );
 
         return $this;
     }
 
     /**
-     * Get the middleware attached to the route.
+     * Get the name of the route.
      *
-     * @return array|string|null
+     * @return string|null
      */
-    protected function getMiddleware()
+    public function getName()
     {
-        return $this->getBinding('middleware') ?? null;
+        return $this->action['name'] ?? null;
     }
 
     /**
-     * Create a route group with shared attributes.
+     * Set the name attribute on the route.
      *
-     * @param \Closure $routes
-     * @return void
-     */
-    public function group($routes)
-    {
-        $this->isCallGroup = true;
-
-        $routes();
-
-        $this->isCallGroup = false;
-        $this->bind('prefix');
-        $this->bind('middleware');
-    }
-
-    /**
-     * Check if the current route is part of a group call.
-     *
-     * @return bool
-     */
-    protected function isCallGroup()
-    {
-        return $this->isCallGroup;
-    }
-
-    /**
-     * Add the route name.
-     *
-     * @param string $name
-     * @return void
+     * @param  string  $name
+     * @return $this
      */
     public function name($name)
     {
-        if ($this->hasNamedRoute($name)) {
-            throw new RouteNameAlreadyExistsException("The route name [$name] already exists.");
-        }
+        $this->action['name'] = $name;
 
-        $this->bind('name', $name);
-
-        $this->addToCollections($this->getBindings());
-        
-        if ($this->isCallGroup()) {
-            $this->keepOnlyBindings(
-                [
-                    $this->getPrefix() ? 'prefix' : null,
-                    $this->getMiddleware() ? 'middleware' : null
-                ]
-            );
-        } else {
-            $this->resetBindings();
-        }
-    }
-
-    /**
-     * Set a regular expression requirement on the route.
-     * 
-     * @param string|array $name
-     * @param string|null $expression
-     * @return $this
-     */
-    public function where($name, $expression = null)
-    {
-        $this->setWhere($this->parseWhere($name, $expression));
+        $this->router->getRoutes()->addToCollectionByName($this);
 
         return $this;
     }
 
     /**
-     * Set a regular expression for the route.
+     * Get the parameters of the route.
      *
-     * @param array $wheres
-     * @return void
+     * @return array|null
      */
-    protected function setWhere($wheres)
+    public function getParameters()
     {
-        $pattern = $this->getBinding('pattern');
-
-        foreach ($wheres as $name => $expression) {
-            $pattern = preg_replace('/\{'.$name.'\?\}/', $expression, $pattern);
-        }
-
-        $this->bind('pattern');
-        $this->bind('where', $pattern);
+        return $this->parameters ?? null;
     }
 
     /**
-     * Parse arguments to the where method into an array.
+     * Convert the route to a symfony route.
      *
-     * @param array|string $name
-     * @param string|null $expression
-     * @return array
+     * @return \Symfony\Component\Routing\Route
      */
-    protected function parseWhere($name, $expression)
+    public function toSymfonyRoute()
     {
-        if (is_null($expression)) {
-            $expression = '([^\/\?]+)';
-        }
-
-        if (is_array($name)) {
-            foreach ($name as $value) {
-                $wheres[$value] = $expression;
-            }
-
-            return $wheres;
-        }
-
-        return [$name => $expression];
+        return new SymfonyRoute(
+            $this->routeUri->path(),
+            $this->routeUri->getOptionalParameters(),
+            $this->routeWhere->getRequirements(),
+            ['utf8' => true, 'action' => $this->action],
+            '', [], $this->methods()
+        );
     }
 
     /**
-     * Return the response for the given route.
+     * Set the router instance on the route.
      *
-     * @param array $route
-     * @param \Foundation\Http\Request $request
-     * @return void
+     * @param  \Foundation\Routing\Router  $router
+     * @return $this
      */
-    public function runRoute($route, Request $request)
+    public function setRouter(Router $router)
     {
-        if (! $request->isMethod($route['method'])) {
-            return;
-        }
+        $this->router = $router;
 
-        if (! empty($route['params'])) {
-            $this->parseParamsFromRequest($route, $request);
-
-            $request->setParamRouteForRequest($route['params']);
-        }
-
-        $this->runController($route);
-    }
-
-    /**
-     * Executes the specified controller based on the given route.
-     *
-     * @param array $route
-     * @return void
-     */
-    protected function runController($route)
-    {
-        $action = $route['action'];
-        $controller = $action[0];
-        $method = $action[1];
-
-        $this->container->build($controller);
-        $this->container->call($controller, $method);
-    }
-
-    /**
-     * Parse a request URI and a route URI pattern to extract parameter values 
-     * from the request URI according to the specified route pattern.
-     *
-     * @param array $route
-     * @param \Foundation\Http\Request $request
-     * @return void
-     */
-    protected function parseParamsFromRequest(&$route, Request $request)
-    {
-        preg_match($route['where'] ?: $route['pattern'], $request->uri(), $matches);
-
-        unset($matches[0]);
-
-        $i = 1;
-
-        foreach ($route['params'] as $key => $value) {
-            $route['params'][$key] = $matches[$i];
-
-            $i++;
-        }
+        return $this;
     }
 
     /**
      * Set the container instance on the route.
      *
-     * @param \Foundation\Container\Container $container
+     * @param  \Foundation\Container\Container  $container
      * @return $this
      */
     public function setContainer(Container $container)

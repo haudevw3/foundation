@@ -2,57 +2,137 @@
 
 namespace Foundation\Routing;
 
-trait RouteCollection
+use Foundation\Routing\Exceptions\RouteNameAlreadyExistsException;
+use Foundation\Support\Arr;
+use Symfony\Component\Routing\RouteCollection as SymfonyRouteCollection;
+
+class RouteCollection
 {
     /**
      * All routes registered in the application.
      *
-     * @var array
+     * @var \Foundation\Routing\Route[]
      */
     protected $routes = [];
 
     /**
-     * Add a route to the route collection.
+     * All routes registered by name in the application.
      *
-     * @param array $route
-     * @return void
+     * @var \Foundation\Routing\Route[]
      */
-    protected function addToCollections($route)
+    protected $nameList = [];
+
+    /**
+     * All routes registered by method in the application.
+     *
+     * @var array
+     */
+    protected $methodList = [];
+
+    /**
+     * Add the given route to the collection.
+     *
+     * @param  \Foundation\Routing\Route  $route
+     * @return \Foundation\Routing\Route
+     */
+    public function add(Route $route)
     {
-        $this->routes[$route['uri']] = $route;
+        $this->addToCollection($route);
+
+        return $route;
     }
 
     /**
-     * Update a value in the collection based on the given key.
+     * Add the given route to the arrays of routes.
      *
-     * @param string $uri
-     * @param array $array
+     * @param  \Foundation\Routing\Route  $route
      * @return void
      */
-    protected function updateToCollectionByKey($uri, $array)
+    protected function addToCollection(Route $route)
     {
-        foreach ($array as $key => $value) {
-            $this->routes[$uri][$key] = $value;
+        $uri = $route->uri();
+
+        foreach ($route->methods() as $method) {
+            $this->routes[$method.$uri] = $route;
         }
+
+        $this->methodList[$method][$uri] = $route;
     }
 
     /**
-     * Check if a route with the given name exists.
+     * Add the given route to the collection by name.
      *
-     * @param string $name
+     * @param  \Foundation\Routing\Route  $route
+     * @return void
+     * 
+     * @throws \Foundation\Routing\Exceptions\RouteNameAlreadyExistsException
+     */
+    public function addToCollectionByName(Route $route)
+    {
+        $name = $route->getName();
+
+        if ($this->hasRouteName($name)) {
+            throw new RouteNameAlreadyExistsException("The route name [$name] already exists.");
+        }
+
+        $this->nameList[$name] = $route;
+    }
+
+    /**
+     * Convert the collection to a symfony route collection instance.
+     *
+     * @return \Symfony\Component\Routing\RouteCollection
+     */
+    public function toSymfonyRouteCollection()
+    {
+        $symfonyRouteCollection = new SymfonyRouteCollection;
+
+        foreach ($this->getRoutes() as $route) {
+            $symfonyRouteCollection->add(
+                $route->getName(), $route->toSymfonyRoute()
+            );
+        }
+
+        return $symfonyRouteCollection;
+    }
+
+    /**
+     * Determine if the route collection contains a given name route.
+     *
+     * @param  string  $name
      * @return bool
      */
-    protected function hasNamedRoute($name)
+    public function hasRouteName($name)
     {
-        foreach ($this->getRoutes() as $route) {
-            return ($route['name'] == $name) ? true : false;
-        }
+        return isset($this->nameList[$name]);
+    }
+
+    /**
+     * Get a route instance by its name.
+     *
+     * @param  string  $name
+     * @return \Foundation\Routing\Route|null
+     */
+    public function getByName($name)
+    {
+        return $this->hasRouteName($name) ? $this->nameList[$name] : null;
+    }
+
+    /**
+     * Get routes from the collection by method.
+     *
+     * @param  string  $method
+     * @return \Foundation\Routing\Route[]|null
+     */
+    public function getByMethod($method)
+    {
+        return isset($this->methodList[$method]) ? $this->methodList[$method] : null;
     }
 
     /**
      * Get all routes registered in the application.
      *
-     * @return array
+     * @return \Foundation\Routing\Route[]
      */
     public function getRoutes()
     {
@@ -60,44 +140,22 @@ trait RouteCollection
     }
 
     /**
-     * Get a route by its name.
+     * Get all of the routes keyed by their name.
      *
-     * @param string $name
-     * @return array|null
+     * @return \Foundation\Routing\Route[]
      */
-    public function getByName($name)
+    public function getRoutesByName()
     {
-        foreach ($this->getRoutes() as $route) {
-            if ($route['name'] == $name) {
-                return $route;
-            }
-        }
-
-        return null;
+        return $this->nameList;
     }
 
     /**
-     * Get a route by its URI.
+     * Get all of the routes keyed by their HTTP method.
      *
-     * @param string $uri
-     * @return array|null
+     * @return array
      */
-    public function getByUri($uri)
+    public function getRoutesByMethod()
     {
-        if (isset($this->getRoutes()[$uri])) {
-            return $this->getRoutes()[$uri];
-        }
-
-        foreach ($this->getRoutes() as $key => $route) {
-            $pattern = $route['pattern'];
-            $where = $route['where'];
-
-            if ((! empty($pattern) && preg_match($pattern, $uri)) ||
-                (! empty($where) && preg_match($where, $uri))) {
-                return $route;
-            }
-        }
-        
-        return null;
+        return $this->methodList;
     }
 }
