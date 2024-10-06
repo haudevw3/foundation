@@ -161,4 +161,14 @@ interface Container
      * @return mixed
      */
     public function call($callback, $parameters = [], $defaultMethod = null);
+
+    /**
+     * Add a contextual binding to the container.
+     *
+     * @param  string           $concrete
+     * @param  string           $abstract
+     * @param  string|\Closure  $implementation
+     * @return void
+     */
+    public function addContextualBinding($concrete, $abstract, $implementation);
 }

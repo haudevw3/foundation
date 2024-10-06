@@ -102,6 +102,13 @@ class Container implements ArrayAccess, ContainerContract
     protected $parameterStack = [];
 
     /**
+     * The contextual binding map.
+     *
+     * @var array
+     */
+    public $contextual = [];
+
+    /**
      * All of the registered rebound callbacks.
      *
      * @var array
@@ -116,13 +123,6 @@ class Container implements ArrayAccess, ContainerContract
     protected $dispatcher;
 
     /**
-     * The contextual binder instance.
-     *
-     * @var \Foundation\Container\ContextualBinder
-     */
-    protected $contextualBinder;
-
-    /**
      * Create a new the container instance.
      * 
      * @return void
@@ -130,7 +130,6 @@ class Container implements ArrayAccess, ContainerContract
     public function __construct()
     {
         $this->dispatcher = new Dispatcher;
-        $this->contextualBinder = new ContextualBinder($this);
     }
 
     /**
@@ -147,7 +146,7 @@ class Container implements ArrayAccess, ContainerContract
             $aliases[] = $this->getAlias($name);
         }
 
-        return $this->contextualBinder->add($aliases);
+        return new ContextualBinder($this, $aliases);
     }
 
     /**
@@ -163,6 +162,19 @@ class Container implements ArrayAccess, ContainerContract
         }
 
         return $this->dispatcher->add($abstract);
+    }
+
+    /**
+     * Add a contextual binding to the container.
+     *
+     * @param  string           $concrete
+     * @param  string           $abstract
+     * @param  string|\Closure  $implementation
+     * @return void
+     */
+    public function addContextualBinding($concrete, $abstract, $implementation)
+    {
+        $this->contextual[$concrete][$this->getAlias($abstract)] = $implementation;
     }
 
     /**
@@ -914,7 +926,7 @@ class Container implements ArrayAccess, ContainerContract
      */
     protected function findInContextualBindings($abstract)
     {
-        return $this->contextualBinder->find(end($this->buildStack), $abstract);
+        return $this->contextual[end($this->buildStack)][$abstract] ?? null;
     }
 
     /**
@@ -1085,8 +1097,12 @@ class Container implements ArrayAccess, ContainerContract
         $this->resolved = [];
         $this->bindings = [];
         $this->instances = [];
+        $this->buildStack = [];
+        $this->parameterStack = [];
         $this->abstractAliases = [];
         $this->scopedInstances = [];
+        $this->reboundCallbacks = [];
+        $this->dispatcher->flush();
     }
 
     /**

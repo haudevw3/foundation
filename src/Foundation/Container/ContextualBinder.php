@@ -10,7 +10,7 @@ class ContextualBinder implements ContextualBinderContract
     /**
      * The concrete instance.
      *
-     * @var string
+     * @var array|string
      */
     protected $concrete;
 
@@ -22,41 +22,23 @@ class ContextualBinder implements ContextualBinderContract
     protected $abstract;
 
     /**
-     * The contextual binding map.
-     *
-     * @var array
-     */
-    protected $contextual = [];
-
-    /**
      * The container instance.
      *
-     * @var \Foundation\Container\Container
+     * @var \Foundation\Container\Contracts\Container
      */
     protected $container;
 
     /**
      * Create a new contextual binder.
      *
-     * @param  \Foundation\Container\Container  $container
+     * @param  \Foundation\Container\Contracts\Container  $container
+     * @param  array|string                               $concrete
      * @return void
      */
-    public function __construct(Container $container)
+    public function __construct(Container $container, $concrete)
     {
         $this->container = $container;
-    }
-
-    /**
-     * Add a contextual binding.
-     *
-     * @param  array|string  $concrete
-     * @return $this
-     */
-    public function add($concrete)
-    {
         $this->concrete = $concrete;
-
-        return $this;
     }
 
     /**
@@ -80,10 +62,8 @@ class ContextualBinder implements ContextualBinderContract
      */
     public function give($implementation)
     {
-        $abstract = $this->container->getAlias($this->abstract);
-
         foreach (Arr::wrap($this->concrete) as $concrete) {
-            $this->contextual[$concrete][$abstract] = $implementation;
+            $this->container->addContextualBinding($concrete, $this->abstract, $implementation);
         }
     }
 
@@ -114,17 +94,5 @@ class ContextualBinder implements ContextualBinderContract
         $this->give(function ($container) use ($key, $default) {
             return $container->get('config')->get($key, $default);
         });
-    }
-
-    /**
-     * Find the concrete binding for the given abstract in the contextual binding array.
-     *
-     * @param  string           $concrete
-     * @param  string|callable  $abstract
-     * @return mixed
-     */
-    public function find($concrete, $abstract)
-    {
-        return $this->contextual[$concrete][$abstract] ?? null;
     }
 }

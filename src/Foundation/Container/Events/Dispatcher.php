@@ -215,4 +215,20 @@ class Dispatcher implements DispatcherContract
             $callback($abstract, $parameters, $this);
         }
     }
+
+    /**
+     * Flush the event of all bindings.
+     *
+     * @return void
+     */
+    public function flush()
+    {
+        $this->abstract = null;
+        $this->beforeResolvingCallbacks = [];
+        $this->resolvingCallbacks = [];
+        $this->afterResolvingCallbacks = [];
+        $this->globalBeforeResolvingCallbacks = [];
+        $this->globalResolvingCallbacks = [];
+        $this->globalAfterResolvingCallbacks = [];
+    }
 }
